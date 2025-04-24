@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Equipment Failure Prediction</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 2rem;
+        }
+        .prediction-card {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            padding: 2rem;
+            margin-top: 2rem;
+        }
+        .result-box {
+            display: none;
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 5px;
+        }
+        .failure {
+            background-color: #ffe6e6;
+            border: 1px solid #ffcccc;
+        }
+        .no-failure {
+            background-color: #e6ffe6;
+            border: 1px solid #ccffcc;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mb-4">Equipment Failure Prediction</h1>
+        
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="prediction-card">
+                    <form id="predictionForm">
+                        <div class="mb-3">
+                            <label for="type" class="form-label">Type</label>
+                            <select class="form-control" id="type" name="type" required>
+                                <option value="0">H</option>
+                                <option value="2">M</option>
+                                <option value="1">L</option>
+                            </select>
+                            <small class="text-muted">Product quality variants(High, Medium, Low)</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="air_temperature" class="form-label">Air Temperature (K)</label>
+                            <input type="number" class="form-control" id="air_temperature" name="air_temperature" required step="0.1">
+                            <small class="text-muted">Typical range: 295-300K</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="process_temperature" class="form-label">Process Temperature (K)</label>
+                            <input type="number" class="form-control" id="process_temperature" name="process_temperature" required step="0.1">
+                            <small class="text-muted">Typical range: 305-315K</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="rotational_speed" class="form-label">Rotational Speed (rpm)</label>
+                            <input type="number" class="form-control" id="rotational_speed" name="rotational_speed" required>
+                            <small class="text-muted">Typical range: 1000-3000 rpm</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="torque" class="form-label">Torque (Nm)</label>
+                            <input type="number" class="form-control" id="torque" name="torque" required step="0.1">
+                            <small class="text-muted">Typical range: 20-80 Nm</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="tool_wear" class="form-label">Tool Wear (minutes)</label>
+                            <input type="number" class="form-control" id="tool_wear" name="tool_wear" required>
+                            <small class="text-muted">Typical range: 0-250 minutes</small>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100">Predict Failure</button>
+                    </form>
+                    
+                    <div id="result" class="result-box">
+                        <h4 class="mb-3">Prediction Result</h4>
+                        <p><strong>Status:</strong> <span id="prediction"></span></p>
+                        <p><strong>Probability of stability:</strong> <span id="probability"></span>%</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('predictionForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            fetch('/predict', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultDiv = document.getElementById('result');
+                const predictionSpan = document.getElementById('prediction');
+                const probabilitySpan = document.getElementById('probability');
+                
+                if (data.status === 'success') {
+                    resultDiv.style.display = 'block';
+                    resultDiv.className = 'result-box ' + (data.prediction === 'Failure' ? 'failure' : 'no-failure');
+                    predictionSpan.textContent = data.prediction;
+                    probabilitySpan.textContent = (data.probability * 100).toFixed(2);
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('Error: ' + error);
+            });
+        });
+    </script>
+</body>
+</html> 
