@@ -16,19 +16,36 @@ except:
 
 @app.route('/')
 def home():
-    return render_template('index.html')
+    return render_template('index1.html')
 
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
         # Get values from the form
+        type_val = int(request.form['type'])
+        air_temp = float(request.form['air_temperature'])
+        process_temp = float(request.form['process_temperature'])
+        rotational_speed = float(request.form['rotational_speed'])
+        torque = float(request.form['torque'])
+        tool_wear = float(request.form['tool_wear'])
+        
+        # Calculate implicit features (example calculations - adjust as needed)
+        # Feature 1: Temperature difference (process - air)
+        temp_difference = process_temp - air_temp
+        
+        # Feature 2: Power (rotational speed * torque)
+        power = rotational_speed * torque
+        
+        # Create features list with all 8 features in correct order
         features = [
-            int(request.form['type']),
-            float(request.form['air_temperature']),
-            float(request.form['process_temperature']),
-            float(request.form['rotational_speed']),
-            float(request.form['torque']),
-            float(request.form['tool_wear'])
+            type_val,
+            air_temp,
+            process_temp,
+            rotational_speed,
+            torque,
+            tool_wear,
+            temp_difference,  # First implicit feature
+            power             # Second implicit feature
         ]
         
         # Make prediction

@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Equipment Failure Prediction</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --success-color: #4cc9f0;
+            --danger-color: #f72585;
+            --warning-color: #f8961e;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .hero-section {
+            background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
+            color: white;
+            padding: 3rem 0;
+            margin-bottom: 2rem;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        .prediction-card {
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            padding: 2.5rem;
+            margin-bottom: 3rem;
+            border: none;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border: none;
+            padding: 0.75rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            background-color: #3a56d4;
+            transform: translateY(-2px);
+        }
+        
+        .result-box {
+            display: none;
+            margin-top: 2rem;
+            padding: 2rem;
+            border-radius: 12px;
+            transition: all 0.5s ease;
+        }
+        
+        .failure {
+            background: linear-gradient(135deg, #fff5f7 0%, #ffe6eb 100%);
+            border-left: 5px solid var(--danger-color);
+        }
+        
+        .no-failure {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border-left: 5px solid #16a34a;
+        }
+        
+        .parameter-card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .parameter-value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        .probability-meter {
+            height: 20px;
+            border-radius: 10px;
+            background: linear-gradient(to right, #16a34a, #facc15, #dc2626);
+            margin: 1rem 0;
+            overflow: hidden;
+        }
+        
+        .meter-fill {
+            height: 100%;
+            background-color: rgba(255,255,255,0.7);
+            transition: width 1s ease;
+        }
+        
+        .feature-icon {
+            font-size: 1.5rem;
+            margin-right: 0.5rem;
+            color: var(--primary-color);
+        }
+        
+        .tooltip-inner {
+            max-width: 300px;
+            padding: 0.5rem 1rem;
+        }
+        .stability-indicator {
+            background-color: #f8f9fa;
+            padding: 0.75rem;
+            border-radius: 8px;
+        }
+        
+        .stability-bar {
+            transition: width 0.6s ease;
+        }
+        
+        .stability-low { 
+            background-color: #dc3545; /* Red for low stability */
+        }
+        .stability-medium { 
+            background-color: #fd7e14; /* Orange for medium stability */
+        }
+        .stability-high { 
+            background-color: #28a745; /* Green for high stability */
+        }
+        .failure-type1 {
+            background: linear-gradient(135deg, #fff5f5 0%, #ffebeb 100%);
+            border-left: 5px solid #ef4444; /* Red */
+        }
+        .failure-type2 {
+            background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+            border-left: 5px solid #f97316; /* Orange */
+        }
+        .failure-type3 {
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+            border-left: 5px solid #eab308; /* Yellow */
+        }
+        .failure-type4 {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border-left: 5px solid #3b82f6; /* Blue */
+        }
+        .failure-type5 {
+            background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+            border-left: 5px solid #8b5cf6; /* Violet */
+        }
+        .no-failure {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border-left: 5px solid #16a34a; /* Green */
+        }
+    
+    .badge-failure1 { background-color: #ef4444; }
+    .badge-failure2 { background-color: #f97316; }
+    .badge-failure3 { background-color: #eab308; }
+    .badge-failure4 { background-color: #3b82f6; }
+    .badge-failure5 { background-color: #8b5cf6; }
+    .badge-no-failure { background-color: #16a34a; }
+        
+        @media (max-width: 768px) {
+            .prediction-card {
+                padding: 1.5rem;
+            }
+            
+            .hero-section {
+                padding: 2rem 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="hero-section">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8 text-center">
+                    <h1 class="display-5 fw-bold mb-3"><i class="bi bi-robot"></i> Equipment Failure Prediction</h1>
+                    <p class="lead">Predict potential equipment failures before they occur using machine learning</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="prediction-card">
+                    <form id="predictionForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label for="type" class="form-label fw-bold"><i class="bi bi-tags-fill feature-icon"></i>Product Type</label>
+                                <select class="form-select" id="type" name="type" required>
+                                    <option value="" selected disabled>Select product type</option>
+                                    <option value="0">High Quality (H)</option>
+                                    <option value="2">Medium Quality (M)</option>
+                                    <option value="1">Low Quality (L)</option>
+                                </select>
+                                <div class="form-text">Product quality variants</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-4">
+                                <label for="tool_wear" class="form-label fw-bold"><i class="bi bi-tools feature-icon"></i>Tool Wear</label>
+                                <input type="number" class="form-control" id="tool_wear" name="tool_wear" required 
+                                       min="0" max="600" placeholder="Enter minutes">
+                                <div class="form-text">Typical range: 0-250 minutes</div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label for="air_temperature" class="form-label fw-bold"><i class="bi bi-thermometer-half feature-icon"></i>Air Temperature</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="air_temperature" name="air_temperature" 
+                                           required step="0.1" min="0" max="600" placeholder="Enter Kelvin">
+                                    <span class="input-group-text">K</span>
+                                </div>
+                                <div class="form-text">Typical range: 295-300K</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-4">
+                                <label for="process_temperature" class="form-label fw-bold"><i class="bi bi-thermometer-high feature-icon"></i>Process Temperature</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="process_temperature" name="process_temperature" 
+                                           required step="0.1" min="0" max="600" placeholder="Enter Kelvin">
+                                    <span class="input-group-text">K</span>
+                                </div>
+                                <div class="form-text">Typical range: 305-315K</div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label for="rotational_speed" class="form-label fw-bold"><i class="bi bi-speedometer2 feature-icon"></i>Rotational Speed</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="rotational_speed" name="rotational_speed" 
+                                           required min="0" max="6000" placeholder="Enter rpm">
+                                    <span class="input-group-text">rpm</span>
+                                </div>
+                                <div class="form-text">Typical range: 1000-3000 rpm</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-4">
+                                <label for="torque" class="form-label fw-bold"><i class="bi bi-gear-wide-connected feature-icon"></i>Torque</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="torque" name="torque" 
+                                           required step="0.1" min="0" max="500" placeholder="Enter Nm">
+                                    <span class="input-group-text">Nm</span>
+                                </div>
+                                <div class="form-text">Typical range: 20-80 Nm</div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid mt-3">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-lightning-charge-fill"></i> Predict Failure
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <div id="result" class="result-box">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4 class="mb-0"><i class="bi bi-clipboard2-pulse"></i> Prediction Result</h4>
+                            <span id="status-badge" class="badge rounded-pill"></span>
+                        </div>
+                        
+                        <div class="parameter-card">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="text-muted mb-1">Predicted Status</p>
+                                    <h3 id="prediction" class="parameter-value"></h3>
+                                    <p id="failure-description" class="text-muted small mt-1"></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="text-muted mb-1">Stability Confidence</p>
+                                    <h3 id="stability-confidence" class="parameter-value"></h3>
+                                    <div class="stability-indicator mt-2">
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <small>Unstable</small>
+                                            <small>Stable</small>
+                                        </div>
+                                        <div class="progress" style="height: 10px;">
+                                            <div id="stability-bar" class="progress-bar bg-success" 
+                                                 role="progressbar" style="width: 0%;"></div>
+                                        </div>
+                                        <p id="stability-description" class="small text-muted mt-1 mb-0"></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="recommendation" class="mt-3 p-3 rounded" style="background-color: #f8f9fa;">
+                            <h5><i class="bi bi-lightbulb"></i> Recommended Action</h5>
+                            <p id="recommendation-text"></p>
+                        </div>
+                    </div>
+                    
+                    <script>
+                        // Failure type definitions with descriptions and recommendations
+                        const failureTypes = {
+                            'No Failure': {
+                                class: 'no-failure',
+                                badgeClass: 'badge-no-failure',
+                                description: 'Equipment is operating normally',
+                                recommendations: 'Continue routine maintenance schedule.'
+                            },
+                            'Power Failure': {
+                                class: 'failure-type1',
+                                badgeClass: 'badge-failure1',
+                                description: 'Electrical power issue detected',
+                                recommendations: 'Check power supply and connections. Inspect electrical components.'
+                            },
+                            'Tool Wear Failure': {
+                                class: 'failure-type2',
+                                badgeClass: 'badge-failure2',
+                                description: 'Excessive tool wear detected',
+                                recommendations: 'Replace worn tools immediately. Review maintenance schedule.'
+                            },
+                            'Overstrain Failure': {
+                                class: 'failure-type3',
+                                badgeClass: 'badge-failure3',
+                                description: 'Equipment is being overworked',
+                                recommendations: 'Reduce operational load. Schedule downtime for inspection.'
+                            },
+                            'Heat Dissipation Failure': {
+                                class: 'failure-type4',
+                                badgeClass: 'badge-failure4',
+                                description: 'Cooling system issue detected',
+                                recommendations: 'Check cooling systems and ventilation. Clean heat sinks.'
+                            },
+                            'Random Failures': {
+                                class: 'failure-type5',
+                                badgeClass: 'badge-failure5',
+                                description: 'Unexpected component failure',
+                                recommendations: 'Full diagnostic check recommended. Replace faulty components.'
+                            }
+                        };
+
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const predictionForm = document.getElementById('predictionForm');
+                            if (predictionForm) {
+                                predictionForm.addEventListener('submit', handleFormSubmit);
+                            }
+                        });
+
+                        async function handleFormSubmit(e) {
+                            e.preventDefault();
+                            
+                            const form = e.target;
+                            const submitBtn = form.querySelector('button[type="submit"]');
+                            const formData = new FormData(form);
+                            
+                            try {
+                                // Show loading state
+                                submitBtn.disabled = true;
+                                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Predicting...';
+                                
+                                // Send prediction request
+                                const response = await fetch('/predict', {
+                                    method: 'POST',
+                                    body: formData
+                                });
+                                
+                                if (!response.ok) {
+                                    throw new Error(`HTTP error! status: ${response.status}`);
+                                }
+                                
+                                const data = await response.json();
+                                displayResults(data);
+                                
+                            } catch (error) {
+                                console.error('Prediction error:', error);
+                                alert('Prediction failed: ' + error.message);
+                            } finally {
+                                // Reset button state
+                                submitBtn.disabled = false;
+                                submitBtn.innerHTML = '<i class="bi bi-lightning-charge-fill"></i> Predict Failure';
+                            }
+                        }
+
+                        function displayResults(data) {
+                        const resultDiv = document.getElementById('result');
+                        if (!resultDiv) return;
+                        
+                        // Clear previous results
+                        resultDiv.style.display = 'none';
+                        
+                        if (data.status !== 'success') {
+                            throw new Error(data.error || 'Unknown error occurred');
+                        }
+                        
+                        // Get the prediction and probability
+                        const predictionLabel = data.prediction;
+                        const probability = data.probability;
+                        const isStable = predictionLabel === "No Failure";
+                        
+                        // Get failure type info
+                        const failureInfo = failureTypes[predictionLabel] || failureTypes['No Failure'];
+                        
+                        // Update prediction display
+                        document.getElementById('prediction').textContent = predictionLabel;
+                        document.getElementById('failure-description').textContent = failureInfo.description;
+                        document.getElementById('status-badge').className = `badge rounded-pill ${failureInfo.badgeClass}`;
+                        document.getElementById('status-badge').textContent = predictionLabel;
+                        
+                        // Calculate and display the appropriate percentage
+                        if (isStable) {
+                            // For "No Failure" - show stability percentage directly
+                            const stabilityPercent = Math.round(probability * 100);
+                            document.getElementById('stability-confidence').textContent = `${stabilityPercent}% Stable`;
+                            document.getElementById('stability-description').textContent = 
+                                `Machine is ${getStabilityLevel(stabilityPercent)} stable`;
+                            
+                            // Update progress bar (green for stability)
+                            const stabilityBar = document.getElementById('stability-bar');
+                            stabilityBar.style.width = `${stabilityPercent}%`;
+                            stabilityBar.className = 'progress-bar ' + getStabilityClass(stabilityPercent);
+                        } else {
+                            // For failures - show failure confidence (100 - probability)
+                            const failureConfidence = Math.round((probability) * 100);
+                            document.getElementById('stability-confidence').textContent = `${failureConfidence}% Stable`;
+                            document.getElementById('stability-description').textContent = 
+                                `${getConfidenceLevel(failureConfidence)} `;
+                            
+                            // Update progress bar (red/orange for failure confidence)
+                            const stabilityBar = document.getElementById('stability-bar');
+                            stabilityBar.style.width = `${failureConfidence}%`;
+                            stabilityBar.className = 'progress-bar ' + getFailureConfidenceClass(failureConfidence);
+                        }
+                        
+                        // Update recommendation
+                        document.getElementById('recommendation-text').textContent = failureInfo.recommendations;
+                        
+                        // Set appropriate styling
+                        resultDiv.className = `result-box ${failureInfo.class}`;
+                        resultDiv.style.display = 'block';
+                        
+                        // Scroll to results
+                        resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+
+                        // Helper functions
+                        function getStabilityClass(percent) {
+                            return percent >= 75 ? 'stability-high' :
+                                percent >= 50 ? 'stability-medium' : 'stability-low';
+                        }
+
+                        function getFailureConfidenceClass(percent) {
+                            return percent >= 75 ? 'failure-confidence-high' :
+                                percent >= 50 ? 'failure-confidence-medium' : 'failure-confidence-low';
+                        }
+
+                        function getStabilityLevel(percent) {
+                            return percent >= 75 ? 'highly' :
+                                percent >= 50 ? 'moderately' : 'marginally';
+                        }
+
+                        function getConfidenceLevel(percent) {
+                            return percent >= 75 ? 'High' :
+                                percent >= 50 ? 'Moderate' : 'Low';
+                        }
+                    </script>
+    </body>
+</html>
